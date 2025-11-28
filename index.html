@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IA Diagnóstica - Analisador de Sintomas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1 id="projectTitle">IA Diagnóstica</h1>
+    <p id="projectDesc">Como a Inteligência Artificial analisa sintomas</p>
+</header>
+
+<section id="formSection">
+    <h2>Informe seus sintomas</h2>
+
+    <form id="symptomForm">
+        <div id="symptomList"></div>
+
+        <label>Duração (dias):
+            <input type="number" id="duration" value="1" min="0">
+        </label>
+
+        <label>Intensidade:
+            <input type="range" id="intensity" min="1" max="5" value="2">
+        </label>
+
+        <label>Informação adicional:
+            <textarea id="extra" placeholder="Ex.: piora à noite, toma remédios, etc."></textarea>
+        </label>
+
+        <button type="submit" class="btn-primary">Analisar</button>
+        <button type="button" id="clearBtn" class="btn-secondary">Limpar</button>
+    </form>
+</section>
+
+<section id="result" class="hidden">
+    <h2>Resultado da Análise</h2>
+
+    <p id="matchSummary"></p>
+
+    <div id="urgencyBadge"></div>
+
+    <h3>Recomendações:</h3>
+    <ul id="recommendations"></ul>
+
+    <h3>Regras Aplicadas:</h3>
+    <pre id="rulesApplied"></pre>
+</section>
+
+<footer>
+    Projeto educativo — não substitui avaliação médica.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
