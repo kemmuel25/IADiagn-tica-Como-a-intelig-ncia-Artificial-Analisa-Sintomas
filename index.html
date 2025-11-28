@@ -1,59 +1,71 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IA Diagnóstica - Analisador de Sintomas</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+resultado.style.display = 'block';
+resultado.innerHTML = `
+<h2>Resultado da análise</h2>
+<p class="small"><strong>Sintomas selecionados:</strong> ${sel.join(', ')}</p>
+<p class="small"><strong>Probabilidade geral:</strong> ${total}% — ${nivel}</p>
+<hr style="border-color:rgba(255,255,255,0.04); margin:14px 0;">
+<h3>Doença mais provável</h3>
+<p><strong>${melhor ? melhor.nome : 'Nenhuma encontrada'}</strong> — <span class="badge" style="background:${melhor ? (melhor.urgencia === 'Alta' ? 'var(--danger)' : melhor.urgencia === 'Média' ? 'var(--accent)' : 'var(--accent2)') : 'rgba(255,255,255,0.04)'}">${melhor ? melhor.urgencia : '-'}</span></p>
+<div class="recs">
+<h4 style="margin-bottom:6px;">Recomendações</h4>
+<ul>
+${recomendacoes.map(r => `<li>${r}</li>`).join('')}
+</ul>
+</div>
+<p class="small" style="margin-top:10px;">Esta ferramenta é educativa. Em caso de dúvida ou emergência, procure um profissional de saúde.</p>
+`;
 
-<header>
-    <h1 id="projectTitle">IA Diagnóstica</h1>
-    <p id="projectDesc">Como a Inteligência Artificial analisa sintomas</p>
-</header>
 
-<section id="formSection">
-    <h2>Informe seus sintomas</h2>
+// salvar no histórico
+historico.unshift({sintomas: sel, prob: total, doenca: melhor ? melhor.nome : null, hora: new Date().toISOString()});
+if(historico.length > 20) historico.pop();
+renderHistorico();
+}
 
-    <form id="symptomForm">
-        <div id="symptomList"></div>
 
-        <label>Duração (dias):
-            <input type="number" id="duration" value="1" min="0">
-        </label>
+function compareUrgencia(a, b){
+const map = { 'Crítica': 3, 'Alta': 3, 'Média': 2, 'Baixa': 1, null: 0 };
+return (map[a]||0) - (map[b]||0);
+}
 
-        <label>Intensidade:
-            <input type="range" id="intensity" min="1" max="5" value="2">
-        </label>
 
-        <label>Informação adicional:
-            <textarea id="extra" placeholder="Ex.: piora à noite, toma remédios, etc."></textarea>
-        </label>
+function renderHistorico(){
+if(historico.length === 0){ historicoEl.style.display = 'none'; return; }
+historicoEl.style.display = 'block';
+historicoEl.innerHTML = '<strong>Histórico das últimas análises</strong>' + historico.map(h => `
+<div class="history-item">
+<div>
+<div style="font-weight:600">${h.doenca || 'Sem correspondência'}</div>
+<div class="small">Sintomas: ${h.sintomas.join(', ')}</div>
+</div>
+<div class="small">${h.prob}% — ${new Date(h.hora).toLocaleString()}</div>
+</div>
+`).join('');
+}
 
-        <button type="submit" class="btn-primary">Analisar</button>
-        <button type="button" id="clearBtn" class="btn-secondary">Limpar</button>
-    </form>
-</section>
 
-<section id="result" class="hidden">
-    <h2>Resultado da Análise</h2>
+function limpar(){
+// limpar seleção e resultado
+document.querySelectorAll('#symptomGrid input[type=checkbox]').forEach(i => i.checked = false);
+resultado.style.display = 'none';
+}
 
-    <p id="matchSummary"></p>
 
-    <div id="urgencyBadge"></div>
+// ligar eventos
+analyzeBtn.addEventListener('click', analisar);
+clearBtn.addEventListener('click', limpar);
 
-    <h3>Recomendações:</h3>
-    <ul id="recommendations"></ul>
 
-    <h3>Regras Aplicadas:</h3>
-    <pre id="rulesApplied"></pre>
-</section>
+// inicialização
+renderSymptoms();
+// tentar restaurar histórico do localStorage (opcional)
+try{ const stored = localStorage.getItem('ia_diag_history'); if(stored) { historico = JSON.parse(stored); renderHistorico(); } }catch(e){ /* ignore */ }
+// salvar histórico ao sair
+window.addEventListener('beforeunload', ()=>{ try{ localStorage.setItem('ia_diag_history', JSON.stringify(historico)); }catch(e){} });
 
-<footer>
-    Projeto educativo — não substitui avaliação médica.
-</footer>
 
-<script src="app.js"></script>
+})();
+</script>
 </body>
 </html>
