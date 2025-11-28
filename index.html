@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IA Diagnóstica — Sistema Avançado (corrigido)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0f1724;
+            --card: #0b1220;
+            --accent: #6366f1;
+            --accent2: #10b981;
+            --danger: #ef4444;
+            --text: #e6eef8;
+            --text-muted: #94a3b8;
+            --radius: 14px;
+            --glass: rgba(255,255,255,0.03);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            color: var(--text);
+            padding: 36px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 920px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            padding: 28px;
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+        }
+
+        h1 { margin: 0 0 6px 0; font-size: 26px; letter-spacing: -0.3px }
+        p.lead { margin: 0 0 18px 0; color:var(--text-muted); font-size:13px }
+
+        .symptom-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .symptom {
+            background: var(--card);
+            padding: 12px 14px;
+            border-radius: 12px;
+            display:flex; align-items:center; gap:12px;
+            cursor: pointer; user-select:none;
+            transition: transform .12s, background .12s;
+        }
+        .symptom input { width:16px; height:16px }
+        .symptom:hover { transform: translateY(-3px) }
+        .controls { margin-top:18px; display:flex; gap:12px }
+
+        .analyzeBtn {
+            flex:1; padding:12px 16px; border-radius:12px; border:none; background:var(--accent); color:white; font-weight:600; cursor:pointer;
+        }
+        .clearBtn { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-muted); padding:10px 14px; border-radius:12px; cursor:pointer }
+
+        .result { margin-top:22px; background:var(--card); padding:18px; border-radius:12px }
+        .result h2 { margin:0 0 8px 0 }
+        .small { font-size:13px; color:var(--text-muted) }
+
+        .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px }
+        .recs ul { margin:8px 0 0 18px }
+
+        .history { margin-top:18px; background: rgba(255,255,255,0.02); padding:12px; border-radius:10px }
+        .history-item { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.02); }
+        .history-item:last-child { border-bottom: none }
+
+        @media (max-width:520px){ .symptom { padding:10px } .container{padding:18px} }
+    </style>
+</head>
+<body>
+    <div class="container" role="main">
+        <h1>IA Diagnóstica — Sistema Avançado</h1>
+        <p class="lead">Selecione sintomas e receba uma análise educativa com probabilidade, doença sugerida, urgência e recomendações. Não substitui avaliação médica.</p>
+
+        <div class="symptom-grid" id="symptomGrid">
+            <!-- itens serão montados por script para facilitar personalização -->
+        </div>
+
+        <div class="controls">
+            <button id="analyzeBtn" class="analyzeBtn">Analisar sintomas</button>
+            <button id="clearBtn" class="clearBtn">Limpar</button>
+        </div>
+
+        <div id="resultado" class="result" style="display:none"></div>
+        <div id="historico" class="history" style="display:none"></div>
+    </div>
+
+<script>
+(function(){
+    // ----- configuração de sintomas e doenças -----
+    const SINTOMAS = [
+        {key:'febre', label:'Febre'},
+        {key:'tosse', label:'Tosse'},
+        {key:'fadiga', label:'Fadiga / Cansaço'},
+        {key:'dor', label:'Dor no corpo'},
+        {key:'falta_ar', label:'Falta de ar'},
+        {key:'nausea', label:'Náusea'},
+        {key:'diarreia', label:'Diarreia'},
+        {key:'calafrios', label:'Calafrios'},
+        {key:'perda_olfato', label:'Perda de olfato'},
+        {key:'garganta', label:'Dor de garganta'},
+        {key:'cabeca', label:'Dor de cabeça'},
+        {key:'alergia', label:'Espirros / Alergia'},
+        {key:'dor_peito', label:'Dor no peito'},
+        {key:'vomito', label:'Vômito'},
+        {key:'dor_abdominal', label:'Dor abdominal'}
+    ];
+
+    const DOENCAS = [
+        { nome: 'Infecção Viral Leve', urgencia: 'Baixa', recomendacoes:['Hidratação','Repouso','Chás quentes'], match:['febre','cabeca','fadiga'] },
+        { nome: 'Infecção Respiratória', urgencia: 'Média', recomendacoes:['Beber água','Evitar poeira','Consultar médico se piorar'], match:['tosse','febre','garganta'] },
+        { nome: 'Covid-19 (possível)', urgencia: 'Média', recomendacoes:['Máscara','Isolamento','Monitorar respiração'], match:['febre','tosse','perda_olfato','fadiga'] },
+        { nome: 'Gastroenterite', urgencia: 'Média', recomendacoes:['Soro de reidratação','Evitar gordura','Alimentação leve'], match:['nausea','diarreia','vomito','dor_abdominal'] },
+        { nome: 'Crise Alérgica', urgencia: 'Baixa', recomendacoes:['Evitar poeira','Lavar rosto','Antialérgico (se indicado)'], match:['alergia','garganta'] },
+        { nome: 'Emergência Respiratória', urgencia: 'Alta', recomendacoes:['Buscar atendimento imediato'], match:['falta_ar','dor_peito'] },
+        { nome: 'Pneumonia (possível)', urgencia: 'Alta', recomendacoes:['Procurar avaliação médica','Monitorar saturação','Evitar esforços'], match:['febre','tosse','falta_ar','catarro'] }
+    ];
+
+    // base de pontuação para probabilidade geral (ajustável)
+    const SCORE_BASE = { febre:20, tosse:15, fadiga:10, dor:10, falta_ar:35, nausea:10, diarreia:10, calafrios:8, perda_olfato:25, garganta:10, cabeca:10, alergia:8, dor_peito:30, vomito:18, dor_abdominal:12, catarro:12 };
+
+    // histórico local
+    let historico = [];
+
+    // elementos
+    const grid = document.getElementById('symptomGrid');
+    const resultado = document.getElementById('resultado');
+    const historicoEl = document.getElementById('historico');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // render sintomas dinamicamente
+    function renderSymptoms(){
+        grid.innerHTML = '';
+        SINTOMAS.forEach(s => {
+            const lab = document.createElement('label');
+            lab.className = 'symptom';
+            lab.innerHTML = `<input type="checkbox" value="${s.key}"> <div>${s.label}</div>`;
+            grid.appendChild(lab);
+        });
+    }
+
+    // obter selecionados
+    function getSelected(){
+        return Array.from(document.querySelectorAll('#symptomGrid input[type=checkbox]:checked')).map(i=>i.value);
+    }
+
+    // função principal de análise
+    function analisar(){
+        const sel = getSelected();
+        if(sel.length === 0){
+            resultado.style.display = 'block';
+            resultado.innerHTML = '<p class="small">Selecione pelo menos um sintoma para que a análise funcione.</p>';
+            return;
+        }
+
+        // probabilidade geral
+        let total = sel.reduce((acc, s) => acc + (SCORE_BASE[s] || 0), 0);
+        if(total > 100) total = 100;
+
+        const nivel = total <= 25 ? 'Baixa probabilidade' : total <= 60 ? 'Probabilidade moderada' : total <= 85 ? 'Alta probabilidade' : 'Risco crítico';
+
+        // identificar melhor correspondência entre doenças
+        let melhor = null; let melhorPct = -1;
+        DOENCAS.forEach(d => {
+            const comuns = d.match.filter(m => sel.includes(m)).length;
+            const pct = Math.round((comuns / d.match.length) * 100);
+            // escolher maior pct e, em empate, escolher que tem maior urgência (Alta > Média > Baixa)
+            if(pct > melhorPct || (pct === melhorPct && compareUrgencia(d.urgencia, melhor ? melhor.urgencia : null) > 0)){
+                melhorPct = pct; melhor = d;
+            }
+        });
+
+        // montar recomendações combinadas: lista única das recomendações da doença + gerais
+        const recomendacoes = Array.from(new Set([...(melhor ? melhor.recomendacoes : []), 'Se houver piora, procure atendimento médico']));
+
+        // exibir resultado
+        resultado.style.display = 'block';
+        resultado.innerHTML = `
+            <h2>Resultado da análise</h2>
+            <p class="small"><strong>Sintomas selecionados:</strong> ${sel.join(', ')}</p>
+            <p class="small"><strong>Probabilidade geral:</strong> ${total}% — ${nivel}</p>
+            <hr style="border-color:rgba(255,255,255,0.04); margin:14px 0;">
+            <h3>Doença mais provável</h3>
+            <p><strong>${melhor ? melhor.nome : 'Nenhuma encontrada'}</strong> — <span class="badge" style="background:${melhor ? (melhor.urgencia === 'Alta' ? 'var(--danger)' : melhor.urgencia === 'Média' ? 'var(--accent)' : 'var(--accent2)') : 'rgba(255,255,255,0.04)'}">${melhor ? melhor.urgencia : '-'}</span></p>
+            <div class="recs">
+                <h4 style="margin-bottom:6px;">Recomendações</h4>
+                <ul>
+                    ${recomendacoes.map(r => `<li>${r}</li>`).join('')}
+                </ul>
+            </div>
+            <p class="small" style="margin-top:10px;">Esta ferramenta é educativa. Em caso de dúvida ou emergência, procure um profissional de saúde.</p>
+        `;
+
+        // salvar no histórico
+        historico.unshift({sintomas: sel, prob: total, doenca: melhor ? melhor.nome : null, hora: new Date().toISOString()});
+        if(historico.length > 20) historico.pop();
+        renderHistorico();
+    }
+
+    function compareUrgencia(a, b){
+        const map = { 'Crítica': 3, 'Alta': 3, 'Média': 2, 'Baixa': 1, null: 0 };
+        return (map[a]||0) - (map[b]||0);
+    }
+
+    function renderHistorico(){
+        if(historico.length === 0){ historicoEl.style.display = 'none'; return; }
+        historicoEl.style.display = 'block';
+        historicoEl.innerHTML = '<strong>Histórico das últimas análises</strong>' + historico.map(h => `
+            <div class="history-item">
+                <div>
+                    <div style="font-weight:600">${h.doenca || 'Sem correspondência'}</div>
+                    <div class="small">Sintomas: ${h.sintomas.join(', ')}</div>
+                </div>
+                <div class="small">${h.prob}% — ${new Date(h.hora).toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+
+    function limpar(){
+        // limpar seleção e resultado
+        document.querySelectorAll('#symptomGrid input[type=checkbox]').forEach(i => i.checked = false);
+        resultado.style.display = 'none';
+    }
+
+    // ligar eventos
+    analyzeBtn.addEventListener('click', analisar);
+    clearBtn.addEventListener('click', limpar);
+
+    // inicialização
+    renderSymptoms();
+    // tentar restaurar histórico do localStorage (opcional)
+    try{ const stored = localStorage.getItem('ia_diag_history'); if(stored) { historico = JSON.parse(stored); renderHistorico(); } }catch(e){ /* ignore */ }
+    // salvar histórico ao sair
+    window.addEventListener('beforeunload', ()=>{ try{ localStorage.setItem('ia_diag_history', JSON.stringify(historico)); }catch(e){} });
+
+})();
+</script>
+</body>
+</html>
