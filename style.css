@@ -1,0 +1,72 @@
+:root {
+    --bg: #0b0f19;
+    --card: #141a28;
+    --text: #e5e9f0;
+    --accent: #4f9fff;
+    --danger: #e11d48;
+}
+
+/* layout */
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+}
+
+header {
+    text-align: center;
+    padding: 30px;
+}
+
+#formSection, #result {
+    background: var(--card);
+    width: 90%;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px #00000040;
+}
+
+.btn-primary {
+    background: var(--accent);
+    padding: 12px;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.btn-secondary {
+    background: #334155;
+    padding: 12px;
+    color: var(--text);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+#urgencyBadge {
+    padding: 8px 14px;
+    font-weight: bold;
+    border-radius: 8px;
+    width: fit-content;
+    margin-top: 10px;
+}
+
+#recommendations li {
+    margin: 6px 0;
+}
+
+#symptomList label {
+    display: block;
+    padding: 5px 0;
+}
