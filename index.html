@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IA Diagnóstica - Analisador de Sintomas</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark">
+    <header>
+        <h1>IA Diagnóstica</h1>
+        <button id="themeToggle">🌗</button>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Selecione seus sintomas</h2>
+
+            <div id="symptomList" class="symptoms"></div>
+
+            <button id="analyzeBtn" class="analyze-btn">Analisar</button>
+        </section>
+
+        <section id="result" class="card hidden">
+            <h2>Resultado da Análise</h2>
+
+            <p id="diagnosis"></p>
+            <p id="probability"></p>
+            <p id="urgency"></p>
+
+            <h3>Recomendações</h3>
+            <ul id="recsList"></ul>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
